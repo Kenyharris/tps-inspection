@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TPS Site Inspection</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --tps-dark: #0f1923;
+    --tps-mid: #1c2b38;
+    --tps-card: #243344;
+    --tps-border: rgba(255,255,255,0.08);
+    --tps-accent: #00c4a0;
+    --tps-accent-dim: rgba(0,196,160,0.12);
+    --tps-text: #f0f4f8;
+    --tps-muted: #7a90a4;
+    --tps-warn: #f5a623;
+    --tps-danger: #e05252;
+    --tps-good: #00c4a0;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--tps-dark);
+    color: var(--tps-text);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: var(--tps-mid);
+    border-bottom: 1px solid var(--tps-border);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--tps-accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--tps-dark);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .app-header-text h1 { font-size: 15px; font-weight: 600; color: var(--tps-text); }
+  .app-header-text p { font-size: 12px; color: var(--tps-muted); }
+
+  /* MAIN */
+  .main { padding: 1.25rem; max-width: 600px; margin: 0 auto; }
+
+  /* STEP INDICATOR */
+  .steps {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+  .step-dot {
+    height: 3px;
+    flex: 1;
+    background: var(--tps-card);
+    border-radius: 99px;
+    transition: background 0.3s;
+  }
+  .step-dot.active { background: var(--tps-accent); }
+  .step-dot.done { background: rgba(0,196,160,0.4); }
+
+  /* SECTION */
+  .section { margin-bottom: 1.25rem; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--tps-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  /* INPUTS */
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--tps-card);
+    border: 1px solid var(--tps-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    color: var(--tps-text);
+    font-family: var(--font);
+    font-size: 15px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.2s;
+  }
+  select:focus, input[type="text"]:focus {
+    border-color: var(--tps-accent);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--tps-muted);
+    pointer-events: none;
+  }
+  select option { background: var(--tps-mid); }
+
+  /* PHOTO AREA */
+  .photo-area {
+    background: var(--tps-card);
+    border: 1.5px dashed var(--tps-border);
+    border-radius: 14px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .photo-area:active { background: rgba(0,196,160,0.06); border-color: var(--tps-accent); }
+  .photo-area-icon { font-size: 32px; margin-bottom: 0.6rem; }
+  .photo-area-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .photo-area-sub { font-size: 12px; color: var(--tps-muted); }
+  #photoInput { display: none; }
+
+  /* PHOTO GRID */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 1rem;
+  }
+  .photo-thumb {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: var(--tps-card);
+  }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-thumb-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .photo-count {
+    font-size: 12px;
+    color: var(--tps-accent);
+    margin-top: 0.6rem;
+    font-family: var(--mono);
+  }
+
+  /* ADD MORE BUTTON */
+  .btn-add-more {
+    width: 100%;
+    margin-top: 0.75rem;
+    background: var(--tps-card);
+    border: 1px dashed var(--tps-border);
+    border-radius: 10px;
+    padding: 0.65rem;
+    color: var(--tps-muted);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-add-more:active { color: var(--tps-accent); border-color: var(--tps-accent); }
+
+  /* NOTES */
+  textarea {
+    width: 100%;
+    background: var(--tps-card);
+    border: 1px solid var(--tps-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    color: var(--tps-text);
+    font-family: var(--font);
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    min-height: 80px;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--tps-accent); }
+  textarea::placeholder { color: var(--tps-muted); }
+
+  /* SUBMIT BUTTON */
+  .btn-submit {
+    width: 100%;
+    background: var(--tps-accent);
+    color: var(--tps-dark);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading-state {
+    display: none;
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+  .loading-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--tps-border);
+    border-top-color: var(--tps-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .loading-sub { font-size: 13px; color: var(--tps-muted); }
+
+  /* REPORT */
+  .report-state { display: none; }
+  .report-hero {
+    background: var(--tps-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--tps-border);
+  }
+  .report-meta { font-size: 12px; color: var(--tps-muted); margin-bottom: 1rem; font-family: var(--mono); }
+  .score-big { font-size: 52px; font-weight: 600; line-height: 1; color: var(--tps-accent); }
+  .score-label { font-size: 13px; color: var(--tps-muted); margin-top: 4px; margin-bottom: 1rem; }
+  .rating-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .rating-excellent { background: rgba(0,196,160,0.15); color: var(--tps-good); }
+  .rating-good { background: rgba(0,196,160,0.1); color: var(--tps-good); }
+  .rating-fair { background: rgba(245,166,35,0.15); color: var(--tps-warn); }
+  .rating-poor { background: rgba(224,82,82,0.15); color: var(--tps-danger); }
+  .report-summary { font-size: 14px; color: var(--tps-muted); line-height: 1.65; }
+
+  .report-card {
+    background: var(--tps-card);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--tps-border);
+  }
+  .report-card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--tps-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .finding-item {
+    display: flex;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--tps-border);
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .finding-item:last-child { border-bottom: none; }
+  .finding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .dot-issue { background: var(--tps-danger); }
+  .dot-ok { background: var(--tps-good); }
+  .dot-rec { background: var(--tps-warn); }
+
+  .priority-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .priority-high { background: rgba(224,82,82,0.15); color: var(--tps-danger); }
+  .priority-medium { background: rgba(245,166,35,0.15); color: var(--tps-warn); }
+  .priority-low { background: rgba(0,196,160,0.1); color: var(--tps-good); }
+
+  .area-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--tps-border);
+    font-size: 14px;
+  }
+  .area-row:last-child { border-bottom: none; }
+  .area-score {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--tps-accent);
+  }
+
+  .btn-new {
+    width: 100%;
+    background: var(--tps-card);
+    color: var(--tps-text);
+    border: 1px solid var(--tps-border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 0.75rem;
+    transition: border-color 0.2s;
+  }
+  .btn-new:active { border-color: var(--tps-accent); }
+
+  .email-status {
+    font-size: 13px;
+    color: var(--tps-muted);
+    text-align: center;
+    margin-top: 0.75rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+    background: var(--tps-card);
+  }
+  .email-status.sent { color: var(--tps-good); }
+  .email-status.failed { color: var(--tps-danger); }
+
+  .error-banner {
+    background: rgba(224,82,82,0.12);
+    border: 1px solid rgba(224,82,82,0.25);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 14px;
+    color: var(--tps-danger);
+    margin-top: 1rem;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-logo">TPS</div>
+  <div class="app-header-text">
+    <h1>Site Inspection</h1>
+    <p>TPS New Zealand</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- STEP INDICATORS -->
+  <div class="steps">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+
+  <!-- FORM STATE -->
+  <div id="formState">
+
+    <div class="section">
+      <div class="section-label">Your name</div>
+      <div class="select-wrap">
+        <select id="managerSelect">
+          <option value="">Select your name...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Site</div>
+      <div class="select-wrap">
+        <select id="siteSelect">
+          <option value="">Select site...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Photos</div>
+      <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+        <input type="file" id="photoInput" accept="image/*" multiple capture="environment">
+        <div class="photo-area-icon">📷</div>
+        <div class="photo-area-title">Take or upload photos</div>
+        <div class="photo-area-sub">Tap to use your camera or select from gallery</div>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="photo-count" id="photoCount"></div>
+      <button class="btn-add-more" id="addMoreBtn" style="display:none" onclick="document.getElementById('photoInput').click()">+ Add more photos</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Notes (optional)</div>
+      <textarea id="notesInput" placeholder="Any context about this inspection..."></textarea>
+    </div>
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitInspection()" disabled>
+      Generate Report
+    </button>
+
+  </div>
+
+  <!-- LOADING STATE -->
+  <div class="loading-state" id="loadingState">
+    <div class="loading-spinner"></div>
+    <div class="loading-title">Analysing your photos...</div>
+    <div class="loading-sub">This usually takes 10-20 seconds</div>
+  </div>
+
+  <!-- REPORT STATE -->
+  <div class="report-state" id="reportState">
+    <div class="report-hero">
+      <div class="report-meta" id="reportMeta"></div>
+      <div class="score-big" id="reportScore">--</div>
+      <div class="score-label">out of 10</div>
+      <div id="reportRating"></div>
+      <p class="report-summary" id="reportSummary"></p>
+    </div>
+
+    <div class="report-card" id="priorityCard">
+      <div class="report-card-title">Action priority</div>
+      <div id="reportPriority"></div>
+    </div>
+
+    <div class="report-card" id="issuesCard" style="display:none">
+      <div class="report-card-title">Issues found</div>
+      <div id="reportIssues"></div>
+    </div>
+
+    <div class="report-card" id="areasCard" style="display:none">
+      <div class="report-card-title">Area breakdown</div>
+      <div id="reportAreas"></div>
+    </div>
+
+    <div class="report-card" id="positivesCard" style="display:none">
+      <div class="report-card-title">Positives</div>
+      <div id="reportPositives"></div>
+    </div>
+
+    <div class="report-card" id="recsCard" style="display:none">
+      <div class="report-card-title">Recommendations</div>
+      <div id="reportRecs"></div>
+    </div>
+
+    <div class="email-status" id="emailStatus"></div>
+
+    <button class="btn-new" onclick="resetApp()">Start new inspection</button>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  let config = {};
+  let uploadedFiles = [];
+
+  async function loadConfig() {
+    try {
+      const [cfgRes, mgrRes, siteRes] = await Promise.all([
+        fetch('config.json'),
+        fetch('managers.json'),
+        fetch('sites.json')
+      ]);
+      config = await cfgRes.json();
+      const managers = await mgrRes.json();
+      const sites = await siteRes.json();
+
+      const mgrSel = document.getElementById('managerSelect');
+      managers.managers.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m; o.textContent = m;
+        mgrSel.appendChild(o);
+      });
+
+      const siteSel = document.getElementById('siteSelect');
+      sites.sites.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        siteSel.appendChild(o);
+      });
+
+      emailjs.init(config.emailjs_public_key);
+    } catch(e) {
+      showError('Could not load configuration files. Check config.json, managers.json and sites.json are present.');
+    }
+  }
+
+  document.getElementById('managerSelect').addEventListener('change', checkReady);
+  document.getElementById('siteSelect').addEventListener('change', checkReady);
+
+  document.getElementById('photoInput').addEventListener('change', function(e) {
+    Array.from(e.target.files).forEach(addPhoto);
+    this.value = '';
+  });
+
+  function addPhoto(file) {
+    const id = Date.now() + Math.random();
+    uploadedFiles.push({ id, file });
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const grid = document.getElementById('photoGrid');
+      const item = document.createElement('div');
+      item.className = 'photo-thumb';
+      item.dataset.id = id;
+      item.innerHTML = `<img src="${ev.target.result}"><button class="photo-thumb-remove" onclick="removePhoto(${id})">x</button>`;
+      grid.appendChild(item);
+      updatePhotoUI();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removePhoto(id) {
+    uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+    const el = document.querySelector(`.photo-thumb[data-id="${id}"]`);
+    if (el) el.remove();
+    updatePhotoUI();
+  }
+
+  function updatePhotoUI() {
+    const n = uploadedFiles.length;
+    document.getElementById('photoCount').textContent = n > 0 ? `${n} photo${n > 1 ? 's' : ''} selected` : '';
+    document.getElementById('addMoreBtn').style.display = n > 0 ? 'block' : 'none';
+    if (n > 0) document.getElementById('photoArea').style.display = 'none';
+    else document.getElementById('photoArea').style.display = '';
+    checkReady();
+  }
+
+  function checkReady() {
+    const manager = document.getElementById('managerSelect').value;
+    const site = document.getElementById('siteSelect').value;
+    const photos = uploadedFiles.length;
+    const ready = manager && site && photos > 0;
+    document.getElementById('submitBtn').disabled = !ready;
+    updateSteps(manager, site, photos);
+  }
+
+  function updateSteps(manager, site, photos) {
+    const d1 = document.getElementById('dot1');
+    const d2 = document.getElementById('dot2');
+    const d3 = document.getElementById('dot3');
+    if (manager && site) { d1.className = 'step-dot done'; d2.className = 'step-dot active'; }
+    else { d1.className = 'step-dot active'; d2.className = 'step-dot'; }
+    if (photos > 0) { d2.className = 'step-dot done'; d3.className = 'step-dot active'; }
+  }
+
+  function toBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('errorBanner');
+    b.textContent = msg;
+    b.style.display = 'block';
+  }
+
+  async function submitInspection() {
+    document.getElementById('errorBanner').style.display = 'none';
+    document.getElementById('formState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('dot3').className = 'step-dot active';
+
+    const manager = document.getElementById('managerSelect').value;
+    const site = document.getElementById('siteSelect').value;
+    const notes = document.getElementById('notesInput').value.trim();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const imageContents = await Promise.all(uploadedFiles.map(async f => {
+        const b64 = await toBase64(f.file);
+        return { type: 'image', source: { type: 'base64', media_type: f.file.type || 'image/jpeg', data: b64 } };
+      }));
+
+      const prompt = `You are a professional facilities and cleaning inspection expert for TPS New Zealand, a facilities and maintenance services company.
+
+Inspector: ${manager}
+Site: ${site}
+Date: ${dateStr} ${timeStr}
+${notes ? 'Inspector notes: ' + notes : ''}
+
+Analyse the provided site photos and generate a structured cleanliness report. Be specific and factual based on what you observe.
+
+Return ONLY valid JSON with no markdown or extra text:
+{
+  "overall_score": <number 1-10>,
+  "overall_rating": "<Poor|Fair|Good|Excellent>",
+  "summary": "<2-3 sentence overall assessment>",
+  "priority": "<Low|Medium|High>",
+  "areas": [
+    {
+      "area": "<area name>",
+      "score": <1-10>,
+      "status": "<Clean|Attention needed|Action required>"
+    }
+  ],
+  "issues": ["<specific issue 1>", "<specific issue 2>"],
+  "positives": ["<positive finding 1>", "<positive finding 2>"],
+  "recommendations": ["<action item 1>", "<action item 2>"]
+}`;
+
+      const messages = [{ role: 'user', content: [...imageContents, { type: 'text', text: prompt }] }];
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': config.anthropic_api_key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error?.message || 'API error');
+
+      const text = data.content.map(b => b.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const result = JSON.parse(clean);
+
+      renderReport(result, manager, site, dateStr, timeStr);
+      sendEmail(result, manager, site, dateStr, timeStr);
+
+    } catch(err) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('formState').style.display = 'block';
+      showError('Analysis failed: ' + err.message);
+    }
+  }
+
+  function renderReport(r, manager, site, dateStr, timeStr) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('reportState').style.display = 'block';
+    document.getElementById('dot3').className = 'step-dot done';
+
+    document.getElementById('reportMeta').textContent = `${manager}  •  ${site}  •  ${dateStr} ${timeStr}`;
+    document.getElementById('reportScore').textContent = r.overall_score;
+
+    const ratingEl = document.getElementById('reportRating');
+    const cls = r.overall_rating.toLowerCase();
+    ratingEl.innerHTML = `<span class="rating-badge rating-${cls}">${r.overall_rating}</span>`;
+
+    document.getElementById('reportSummary').textContent = r.summary;
+
+    const pEl = document.getElementById('reportPriority');
+    const pCls = r.priority.toLowerCase();
+    pEl.innerHTML = `<span class="priority-pill priority-${pCls}">${r.priority} priority</span>`;
+
+    if (r.issues && r.issues.length) {
+      const el = document.getElementById('reportIssues');
+      el.innerHTML = r.issues.map(i => `<div class="finding-item"><div class="finding-dot dot-issue"></div><div>${i}</div></div>`).join('');
+      document.getElementById('issuesCard').style.display = 'block';
+    }
+
+    if (r.areas && r.areas.length) {
+      const el = document.getElementById('reportAreas');
+      el.innerHTML = r.areas.map(a => `<div class="area-row"><span>${a.area}</span><span class="area-score">${a.score}/10</span></div>`).join('');
+      document.getElementById('areasCard').style.display = 'block';
+    }
+
+    if (r.positives && r.positives.length) {
+      const el = document.getElementById('reportPositives');
+      el.innerHTML = r.positives.map(p => `<div class="finding-item"><div class="finding-dot dot-ok"></div><div>${p}</div></div>`).join('');
+      document.getElementById('positivesCard').style.display = 'block';
+    }
+
+    if (r.recommendations && r.recommendations.length) {
+      const el = document.getElementById('reportRecs');
+      el.innerHTML = r.recommendations.map(rec => `<div class="finding-item"><div class="finding-dot dot-rec"></div><div>${rec}</div></div>`).join('');
+      document.getElementById('recsCard').style.display = 'block';
+    }
+  }
+
+  async function sendEmail(r, manager, site, dateStr, timeStr) {
+    const statusEl = document.getElementById('emailStatus');
+    statusEl.textContent = 'Sending report email...';
+
+    try {
+      await emailjs.send(config.emailjs_service_id, config.emailjs_template_id, {
+        to_email: config.report_email,
+        manager_name: manager,
+        site_name: site,
+        report_date: `${dateStr} at ${timeStr}`,
+        overall_score: `${r.overall_score}/10`,
+        overall_rating: r.overall_rating,
+        priority: r.priority,
+        summary: r.summary,
+        issues: r.issues && r.issues.length ? r.issues.map((i, n) => `${n+1}. ${i}`).join('\n') : 'No issues identified',
+        recommendations: r.recommendations && r.recommendations.length ? r.recommendations.map((rec, n) => `${n+1}. ${rec}`).join('\n') : 'No recommendations'
+      });
+      statusEl.textContent = 'Report emailed successfully';
+      statusEl.className = 'email-status sent';
+    } catch(err) {
+      statusEl.textContent = 'Email failed to send. Report is still shown above.';
+      statusEl.className = 'email-status failed';
+    }
+  }
+
+  function resetApp() {
+    uploadedFiles = [];
+    document.getElementById('photoGrid').innerHTML = '';
+    document.getElementById('photoCount').textContent = '';
+    document.getElementById('photoArea').style.display = '';
+    document.getElementById('addMoreBtn').style.display = 'none';
+    document.getElementById('managerSelect').value = '';
+    document.getElementById('siteSelect').value = '';
+    document.getElementById('notesInput').value = '';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('issuesCard').style.display = 'none';
+    document.getElementById('areasCard').style.display = 'none';
+    document.getElementById('positivesCard').style.display = 'none';
+    document.getElementById('recsCard').style.display = 'none';
+    document.getElementById('emailStatus').textContent = '';
+    document.getElementById('emailStatus').className = 'email-status';
+    document.getElementById('reportState').style.display = 'none';
+    document.getElementById('formState').style.display = 'block';
+    document.getElementById('dot1').className = 'step-dot active';
+    document.getElementById('dot2').className = 'step-dot';
+    document.getElementById('dot3').className = 'step-dot';
+  }
+
+  loadConfig();
+</script>
+</body>
+</html>
