@@ -92,7 +92,7 @@
   }
 
   /* INPUTS */
-  input[type="text"] {
+  select, input[type="text"] {
     width: 100%;
     background: var(--tps-card);
     border: 1px solid var(--tps-border);
@@ -106,96 +106,24 @@
     -webkit-appearance: none;
     transition: border-color 0.2s;
   }
-  input[type="text"]:focus {
+  select:focus, input[type="text"]:focus {
     border-color: var(--tps-accent);
   }
-
-  /* SEARCHABLE DROPDOWN */
-  .custom-select-wrap { position: relative; }
-  .custom-select-display {
-    width: 100%;
-    background: var(--tps-card);
-    border: 1px solid var(--tps-border);
-    border-radius: 10px;
-    padding: 0.85rem 1rem;
-    color: var(--tps-text);
-    font-family: var(--font);
-    font-size: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: border-color 0.2s;
-    user-select: none;
-  }
-  .custom-select-display.open,
-  .custom-select-display:focus-within {
-    border-color: var(--tps-accent);
-  }
-  .custom-select-display-text { flex: 1; }
-  .custom-select-display-text.placeholder { color: var(--tps-muted); }
-  .custom-select-caret {
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-top: 5px solid var(--tps-muted);
-    flex-shrink: 0;
-    margin-left: 8px;
-    transition: transform 0.2s;
+    pointer-events: none;
   }
-  .custom-select-display.open .custom-select-caret { transform: rotate(180deg); }
-  .custom-select-panel {
-    display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    background: var(--tps-card);
-    border: 1px solid var(--tps-border);
-    border-radius: 10px;
-    z-index: 200;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-  }
-  .custom-select-panel.open { display: block; }
-  .custom-select-search {
-    width: 100%;
-    box-sizing: border-box;
-    border: none;
-    border-bottom: 1px solid var(--tps-border);
-    border-radius: 0;
-    padding: 0.65rem 1rem;
-    background: var(--tps-mid);
-    color: var(--tps-text);
-    font-family: var(--font);
-    font-size: 14px;
-    outline: none;
-  }
-  .custom-select-search::placeholder { color: var(--tps-muted); }
-  .custom-select-list {
-    list-style: none;
-    margin: 0;
-    padding: 0.3rem 0;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-  .custom-select-list li {
-    padding: 0.7rem 1rem;
-    cursor: pointer;
-    color: var(--tps-text);
-    font-size: 15px;
-    transition: background 0.15s;
-  }
-  .custom-select-list li:hover { background: rgba(0,196,160,0.1); }
-  .custom-select-list li.selected { color: var(--tps-accent); font-weight: 500; }
-  .custom-select-list li.hidden { display: none; }
-  .custom-select-no-results {
-    padding: 0.7rem 1rem;
-    color: var(--tps-muted);
-    font-size: 14px;
-    display: none;
-  }
+  select option { background: var(--tps-mid); }
 
   /* PHOTO AREA */
   .photo-area {
@@ -477,34 +405,20 @@
 
     <div class="section">
       <div class="section-label">Your name</div>
-      <div class="custom-select-wrap" id="managerDropdown">
-        <div class="custom-select-display" id="managerDisplay" onclick="toggleDropdown('manager')">
-          <span class="custom-select-display-text placeholder" id="managerDisplayText">Select your name...</span>
-          <span class="custom-select-caret"></span>
-        </div>
-        <div class="custom-select-panel" id="managerPanel">
-          <input type="text" class="custom-select-search" id="managerSearch" placeholder="Search..." oninput="filterOptions('manager')" onclick="event.stopPropagation()">
-          <ul class="custom-select-list" id="managerList"></ul>
-          <div class="custom-select-no-results" id="managerNoResults">No results found</div>
-        </div>
+      <div class="select-wrap">
+        <select id="managerSelect">
+          <option value="">Select your name...</option>
+        </select>
       </div>
-      <input type="hidden" id="managerSelect">
     </div>
 
     <div class="section">
       <div class="section-label">Site</div>
-      <div class="custom-select-wrap" id="siteDropdown">
-        <div class="custom-select-display" id="siteDisplay" onclick="toggleDropdown('site')">
-          <span class="custom-select-display-text placeholder" id="siteDisplayText">Select site...</span>
-          <span class="custom-select-caret"></span>
-        </div>
-        <div class="custom-select-panel" id="sitePanel">
-          <input type="text" class="custom-select-search" id="siteSearch" placeholder="Search..." oninput="filterOptions('site')" onclick="event.stopPropagation()">
-          <ul class="custom-select-list" id="siteList"></ul>
-          <div class="custom-select-no-results" id="siteNoResults">No results found</div>
-        </div>
+      <div class="select-wrap">
+        <select id="siteSelect">
+          <option value="">Select site...</option>
+        </select>
       </div>
-      <input type="hidden" id="siteSelect">
     </div>
 
     <div class="section">
@@ -598,8 +512,19 @@
       const managers = await mgrRes.json();
       const sites = await siteRes.json();
 
-      populateDropdown('manager', managers.managers);
-      populateDropdown('site', sites.sites);
+      const mgrSel = document.getElementById('managerSelect');
+      managers.managers.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m; o.textContent = m;
+        mgrSel.appendChild(o);
+      });
+
+      const siteSel = document.getElementById('siteSelect');
+      sites.sites.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        siteSel.appendChild(o);
+      });
 
       emailjs.init(config.emailjs_public_key);
     } catch(e) {
@@ -607,65 +532,8 @@
     }
   }
 
-  function populateDropdown(type, items) {
-    const list = document.getElementById(type + 'List');
-    items.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      li.dataset.value = item;
-      li.onclick = () => selectOption(type, item);
-      list.appendChild(li);
-    });
-  }
-
-  function toggleDropdown(type) {
-    const display = document.getElementById(type + 'Display');
-    const panel = document.getElementById(type + 'Panel');
-    const isOpen = panel.classList.contains('open');
-    closeAllDropdowns();
-    if (!isOpen) {
-      display.classList.add('open');
-      panel.classList.add('open');
-      document.getElementById(type + 'Search').focus();
-    }
-  }
-
-  function closeAllDropdowns() {
-    ['manager', 'site'].forEach(type => {
-      document.getElementById(type + 'Display').classList.remove('open');
-      document.getElementById(type + 'Panel').classList.remove('open');
-      const search = document.getElementById(type + 'Search');
-      if (search.value) { search.value = ''; filterOptions(type); }
-    });
-  }
-
-  function filterOptions(type) {
-    const search = document.getElementById(type + 'Search').value.toLowerCase();
-    const items = document.querySelectorAll('#' + type + 'List li');
-    let visible = 0;
-    items.forEach(li => {
-      const match = li.textContent.toLowerCase().includes(search);
-      li.classList.toggle('hidden', !match);
-      if (match) visible++;
-    });
-    document.getElementById(type + 'NoResults').style.display = visible === 0 ? 'block' : 'none';
-  }
-
-  function selectOption(type, value) {
-    document.getElementById(type + 'Select').value = value;
-    const displayText = document.getElementById(type + 'DisplayText');
-    displayText.textContent = value;
-    displayText.classList.remove('placeholder');
-    document.querySelectorAll('#' + type + 'List li').forEach(li => {
-      li.classList.toggle('selected', li.dataset.value === value);
-    });
-    closeAllDropdowns();
-    checkReady();
-  }
-
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.custom-select-wrap')) closeAllDropdowns();
-  });
+  document.getElementById('managerSelect').addEventListener('change', checkReady);
+  document.getElementById('siteSelect').addEventListener('change', checkReady);
 
   document.getElementById('photoInput').addEventListener('change', function(e) {
     Array.from(e.target.files).forEach(addPhoto);
@@ -889,12 +757,6 @@ Return ONLY valid JSON with no markdown or extra text:
     document.getElementById('addMoreBtn').style.display = 'none';
     document.getElementById('managerSelect').value = '';
     document.getElementById('siteSelect').value = '';
-    ['manager', 'site'].forEach(type => {
-      const dt = document.getElementById(type + 'DisplayText');
-      dt.textContent = type === 'manager' ? 'Select your name...' : 'Select site...';
-      dt.classList.add('placeholder');
-      document.querySelectorAll('#' + type + 'List li').forEach(li => li.classList.remove('selected'));
-    });
     document.getElementById('notesInput').value = '';
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('issuesCard').style.display = 'none';
