@@ -659,13 +659,24 @@ Return ONLY valid JSON with no markdown or extra text:
         body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages })
       });
 
-      const data = await resp.json();
+      const rawText = await resp.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch(e) {
+        throw new Error('Function returned non-JSON (status ' + resp.status + '): ' + rawText.slice(0, 300));
+      }
       if (!resp.ok) throw new Error(data.error?.message || 'API error');
 
       const text = data.content.map(b => b.text || '').join('');
-      const clean = text.replace(/```json[\s\S]*?```|```/g, s => s.startsWith('```json') ? s.slice(7, -3) : '').trim() || text.trim();
-      if (!clean) throw new Error('Empty response from AI — please try again.');
-      const result = JSON.parse(clean);
+      const clean = text.replace(/```json|```/g, '').trim();
+      if (!clean) throw new Error('AI returned an empty response — please try again.');
+      let result;
+      try {
+        result = JSON.parse(clean);
+      } catch(e) {
+        throw new Error('AI returned malformed JSON: ' + clean.slice(0, 300));
+      }
 
       renderReport(result, manager, site, dateStr, timeStr);
       sendEmail(result, manager, site, dateStr, timeStr);
