@@ -661,7 +661,7 @@ Return ONLY valid JSON with no markdown or extra text:
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, messages })
       });
 
       const data = await resp.json();
@@ -677,7 +677,10 @@ Return ONLY valid JSON with no markdown or extra text:
     } catch(err) {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('formState').style.display = 'block';
-      showError('Analysis failed: ' + err.message);
+      const msg = err.message === 'Failed to fetch'
+        ? 'Could not reach the Anthropic API. Check your internet connection and that your API key in config.json is valid.'
+        : 'Analysis failed: ' + err.message;
+      showError(msg);
     }
   }
 
