@@ -653,14 +653,9 @@ Return ONLY valid JSON with no markdown or extra text:
 
       const messages = [{ role: 'user', content: [...imageContents, { type: 'text', text: prompt }] }];
 
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('/analyse', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': config.anthropic_api_key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, messages })
       });
 
