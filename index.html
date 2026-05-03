@@ -656,14 +656,15 @@ Return ONLY valid JSON with no markdown or extra text:
       const resp = await fetch('/analyse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, messages })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages })
       });
 
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error?.message || 'API error');
 
       const text = data.content.map(b => b.text || '').join('');
-      const clean = text.replace(/```json|```/g, '').trim();
+      const clean = text.replace(/```json[\s\S]*?```|```/g, s => s.startsWith('```json') ? s.slice(7, -3) : '').trim() || text.trim();
+      if (!clean) throw new Error('Empty response from AI — please try again.');
       const result = JSON.parse(clean);
 
       renderReport(result, manager, site, dateStr, timeStr);
